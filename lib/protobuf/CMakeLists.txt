@@ -1,7 +1,8 @@
+set(PROTOC "/opt/homebrew/bin/protoc")
 
 find_program(PROTOC protoc)
 if(NOT PROTOC)
-	message(FATAL_ERROR "Could not find protoc")
+	message(FATAL_ERROR "Could not find protoc - edited")
 endif()
 
 add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/takion.pb"

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: LicenseRef-AGPL-3.0-only-OpenSSL
+@file:OptIn(kotlin.ExperimentalUnsignedTypes::class)
 
 package com.metallic.chiaki.discovery
 
@@ -10,14 +11,11 @@ import com.metallic.chiaki.lib.DiscoveryHost
 import com.metallic.chiaki.lib.DiscoveryService
 import com.metallic.chiaki.lib.DiscoveryServiceOptions
 import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.Subject
-import java.lang.NumberFormatException
 import java.net.InetSocketAddress
-import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
@@ -32,11 +30,12 @@ class DiscoveryManager
 {
 	companion object
 	{
-		const val HOSTS_MAX: ULong = 16U
-		const val DROP_PINGS: ULong = 3U
-		const val PING_MS: ULong = 500U
-		const val PORT = 987
+		// Using 'val' instead of 'const val' to prevent the compiler backend crash
+		val HOSTS_MAX: Long = 16
+		val DROP_PINGS: Long = 3
+		val PING_MS: Long = 500
 
+		const val PORT = 987
 		const val DEBOUNCE_EMPTY_MS = 1000L
 	}
 
@@ -61,11 +60,11 @@ class DiscoveryManager
 
 	private var discoveredHostsSubjectRaw: Subject<List<DiscoveryHost>> = BehaviorSubject.create<List<DiscoveryHost>>().also { subject ->
 		subject.debounce { hosts ->
-				if(hosts.isEmpty())
-					Observable.timer(DEBOUNCE_EMPTY_MS, TimeUnit.MILLISECONDS)
-				else
-					Observable.empty()
-			}
+			if(hosts.isEmpty())
+				Observable.timer(DEBOUNCE_EMPTY_MS, TimeUnit.MILLISECONDS)
+			else
+				Observable.empty()
+		}
 			.subscribe { hosts ->
 				discoveredHostsSubjectDebounced.onNext(hosts)
 			}
@@ -95,7 +94,7 @@ class DiscoveryManager
 	fun sendWakeup(host: String, registKey: ByteArray, ps5: Boolean)
 	{
 		val registKeyString = registKey.indexOfFirst { it == 0.toByte() }.let { end -> registKey.copyOfRange(0, if(end >= 0) end else registKey.size) }.toString(StandardCharsets.UTF_8)
-		val credential = try { registKeyString.toULong(16) } catch(e: NumberFormatException) {
+		val credential = try { registKeyString.toULong(16) } catch(e: Exception) {
 			Log.e("DiscoveryManager", "Failed to convert registKey to int", e)
 			return
 		}
@@ -110,7 +109,10 @@ class DiscoveryManager
 			try
 			{
 				discoveryService = DiscoveryService(DiscoveryServiceOptions(
-					HOSTS_MAX, DROP_PINGS, PING_MS, InetSocketAddress("255.255.255.255", PORT)
+					HOSTS_MAX.toULong(),
+					DROP_PINGS.toULong(),
+					PING_MS.toULong(),
+					InetSocketAddress("255.255.255.255", PORT)
 				), discoveredHostsSubjectRaw::onNext)
 			}
 			catch(e: CreateError)
