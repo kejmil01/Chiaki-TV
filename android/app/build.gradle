@@ -118,11 +118,9 @@ android {
     }
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-    kotlinOptions {
-        freeCompilerArgs += "-Xopt-in=kotlin.ExperimentalUnsignedTypes"
-    }
-}
+// Avoid global -Xopt-in=kotlin.ExperimentalUnsignedTypes: it triggers a crash in
+// ExperimentalUsageChecker during kapt (resolveClassByFqName -> ErrorUtils.getPackage).
+// DiscoveryManager.kt uses @file:OptIn(kotlin.ExperimentalUnsignedTypes::class) instead.
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -144,11 +142,12 @@ dependencies {
     kapt "androidx.room:room-compiler:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
     implementation "androidx.room:room-rxjava2:$room_version"
-    implementation "com.squareup.moshi:moshi:1.9.2"
-    kapt "com.squareup.moshi:moshi-kotlin-codegen:1.9.2"
+    implementation "com.squareup.moshi:moshi:1.14.0"
+    kapt "com.squareup.moshi:moshi-kotlin-codegen:1.14.0"
 }
 
 kapt {
+    correctErrorTypes = true
     javacOptions {
         // This helps Room/Moshi avoid issues with the newer JDK's module system
         option("-source", "8")
