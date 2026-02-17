@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity()
 		viewModel = ViewModelProvider(this, viewModelFactory { MainViewModel(getDatabase(this), Preferences(this)) })
 			.get(MainViewModel::class.java)
 
-		val recyclerViewAdapter = DisplayHostRecyclerViewAdapter(this::hostTriggered, this::wakeupHost, this::editHost, this::deleteHost)
+		val recyclerViewAdapter = DisplayHostRecyclerViewAdapter(this::hostTriggered, this::wakeupHost, this::sleepHost, this::editHost, this::deleteHost)
 		binding.hostsRecyclerView.adapter = recyclerViewAdapter
 		binding.hostsRecyclerView.layoutManager = LinearLayoutManager(this)
 		viewModel.displayHosts.observe(this, Observer {
@@ -212,6 +212,92 @@ class MainActivity : AppCompatActivity()
 	{
 		val registeredHost = host.registeredHost ?: return
 		viewModel.discoveryManager.sendWakeup(host.host, registeredHost.rpRegistKey, registeredHost.target.isPS5)
+	}
+
+	private fun sleepHost(host: DisplayHost)
+	{
+		val registeredHost = host.registeredHost ?: return
+		Thread {
+			var session: com.metallic.chiaki.lib.Session? = null
+			var connected = false
+			var shouldSleep = false
+			try
+			{
+				val connectInfo = ConnectInfo(host.isPS5, host.host, registeredHost.rpRegistKey, registeredHost.rpKey, Preferences(this).videoProfile)
+				session = com.metallic.chiaki.lib.Session(connectInfo, null, false)
+				val sessionRef = session // Capture immutable reference for closure
+				session.eventCallback = { event ->
+					when(event)
+					{
+						is com.metallic.chiaki.lib.ConnectedEvent -> {
+							// Session connected, mark as connected
+							connected = true
+							shouldSleep = true
+						}
+						is com.metallic.chiaki.lib.LoginPinRequestEvent -> {
+							// PIN required, can't sleep without it
+							shouldSleep = false
+						}
+						is com.metallic.chiaki.lib.QuitEvent -> {
+							// Session quit, cleanup will happen in main thread
+							connected = false
+						}
+						else -> {}
+					}
+				}
+				val startResult = sessionRef.start()
+				if(!startResult.isSuccess)
+				{
+					sessionRef.dispose()
+					return@Thread
+				}
+				
+				// Wait for connection (up to 15 seconds)
+				var waited = 0
+				while(!connected && waited < 15000)
+				{
+					Thread.sleep(100)
+					waited += 100
+				}
+				
+				// If connected and should sleep, wait a bit for streams to initialize, then send sleep command
+				if(connected && shouldSleep)
+				{
+					// Wait for streams to initialize (2 seconds)
+					Thread.sleep(2000)
+					
+					// Send sleep command
+					sessionRef.gotoBed()
+					
+					// Wait for command to be sent (1 second)
+					Thread.sleep(1000)
+				}
+				
+				// Stop the session
+				sessionRef.stop()
+				
+				// Wait a bit for stop to propagate
+				Thread.sleep(500)
+				
+				// Dispose the session (this will join threads)
+				sessionRef.dispose()
+				session = null
+			}
+			catch(e: Exception)
+			{
+				// Ignore errors, but make sure to cleanup
+				try
+				{
+					session?.stop()
+					Thread.sleep(200)
+					session?.dispose()
+				}
+				catch(e2: Exception)
+				{
+					// Ignore cleanup errors
+				}
+			}
+		}.start()
 	}
 
 	private fun editHost(host: DisplayHost)

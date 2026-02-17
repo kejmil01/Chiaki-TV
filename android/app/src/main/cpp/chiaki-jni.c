@@ -461,6 +461,12 @@ JNIEXPORT void JNICALL JNI_FCN(sessionSetLoginPin)(JNIEnv *env, jobject obj, jlo
 	E->ReleaseStringUTFChars(env, pin_java, pin);
 }
 
+JNIEXPORT jint JNICALL JNI_FCN(sessionGotoBed)(JNIEnv *env, jobject obj, jlong ptr)
+{
+	AndroidChiakiSession *session = (AndroidChiakiSession *)ptr;
+	return chiaki_session_goto_bed(&session->session);
+}
+
 typedef struct android_discovery_service_t
 {
 	ChiakiDiscoveryService service;

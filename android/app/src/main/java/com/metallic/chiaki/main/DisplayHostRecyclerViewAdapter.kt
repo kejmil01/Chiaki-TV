@@ -31,6 +31,7 @@ class DisplayHostDiffCallback(val old: List<DisplayHost>, val new: List<DisplayH
 class DisplayHostRecyclerViewAdapter(
 	val clickCallback: (DisplayHost) -> Unit,
 	val wakeupCallback: (DisplayHost) -> Unit,
+	val sleepCallback: (DisplayHost) -> Unit,
 	val editCallback: (DisplayHost) -> Unit,
 	val deleteCallback: (DisplayHost) -> Unit
 ): RecyclerView.Adapter<DisplayHostRecyclerViewAdapter.ViewHolder>()
@@ -91,20 +92,23 @@ class DisplayHostRecyclerViewAdapter(
 			it.root.setOnClickListener { clickCallback(host) }
 
 			val canWakeup = host.registeredHost != null
+			val canSleep = host.registeredHost != null && host is DiscoveredDisplayHost && host.discoveredHost.state == DiscoveryHost.State.READY
 			val canEditDelete = host is ManualDisplayHost
-			if(canWakeup || canEditDelete)
+			if(canWakeup || canSleep || canEditDelete)
 			{
 				it.menuButton.isVisible = true
 				it.menuButton.setOnClickListener { _ ->
 					val menu = PopupMenu(context, it.menuButton)
 					menu.menuInflater.inflate(R.menu.display_host, menu.menu)
 					menu.menu.findItem(R.id.action_wakeup).isVisible = canWakeup
+					menu.menu.findItem(R.id.action_sleep).isVisible = canSleep
 					menu.menu.findItem(R.id.action_edit).isVisible = canEditDelete
 					menu.menu.findItem(R.id.action_delete).isVisible = canEditDelete
 					menu.setOnMenuItemClickListener { menuItem ->
 						when(menuItem.itemId)
 						{
 							R.id.action_wakeup -> wakeupCallback(host)
+							R.id.action_sleep -> sleepCallback(host)
 							R.id.action_edit -> editCallback(host)
 							R.id.action_delete -> deleteCallback(host)
 							else -> return@setOnMenuItemClickListener false
