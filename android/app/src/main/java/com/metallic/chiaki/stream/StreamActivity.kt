@@ -33,6 +33,7 @@ import com.metallic.chiaki.touchcontrols.TouchControlsFragment
 import com.metallic.chiaki.touchcontrols.TouchpadOnlyFragment
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
+import java.util.Observer
 import kotlin.math.min
 
 
@@ -158,6 +159,34 @@ class StreamActivity : AppCompatActivity(), View.OnSystemUiVisibilityChangeListe
 	{
 		super.onPause()
 		viewModel.session.pause()
+	}
+
+	override fun onBackPressed()
+	{
+		// Ask whether to put the console to sleep before disconnecting
+		MaterialAlertDialogBuilder(this)
+			.setMessage(R.string.alert_message_disconnect_sleep)
+			.setPositiveButton(R.string.action_sleep) { _, _ ->
+				// Reuse the current streaming session to put the console to sleep
+				try
+				{
+					viewModel.session.gotoBed()
+				}
+				catch(e: Exception)
+				{
+					// Ignore errors, we'll still disconnect
+				}
+				// Then disconnect and return to previous activity
+				viewModel.session.shutdown()
+				finish()
+			}
+			.setNegativeButton(R.string.action_quit_session) { _, _ ->
+				// Just disconnect without putting the console to sleep
+				viewModel.session.shutdown()
+				finish()
+			}
+			.setNeutralButton(android.R.string.cancel, null)
+			.show()
 	}
 
 	override fun onDestroy()

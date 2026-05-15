@@ -52,6 +52,11 @@ class StreamSession(val connectInfo: ConnectInfo, val logManager: LogManager, va
 		shutdown()
 	}
 
+	fun gotoBed()
+	{
+		session?.gotoBed()
+	}
+
 	fun resume()
 	{
 		if(session != null)
