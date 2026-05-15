@@ -127,6 +127,15 @@ class StreamInput(val context: Context, val preferences: Preferences)
 		if(event.action != KeyEvent.ACTION_DOWN && event.action != KeyEvent.ACTION_UP)
 			return false
 
+		if(event.keyCode == KeyEvent.KEYCODE_BACK && event.isGamepadEvent())
+		{
+			if(preferences.gamepadBackButtonDisconnectEnabled)
+				return false
+
+			updateKeyButtonState(event, ControllerState.BUTTON_SHARE)
+			return true
+		}
+
 		when(event.keyCode)
 		{
 			KeyEvent.KEYCODE_BUTTON_L2 -> {
@@ -154,13 +163,31 @@ class StreamInput(val context: Context, val preferences: Preferences)
 			KeyEvent.KEYCODE_BUTTON_R1 -> ControllerState.BUTTON_R1
 			KeyEvent.KEYCODE_BUTTON_THUMBL -> ControllerState.BUTTON_L3
 			KeyEvent.KEYCODE_BUTTON_THUMBR -> ControllerState.BUTTON_R3
-			KeyEvent.KEYCODE_BUTTON_SELECT -> ControllerState.BUTTON_SHARE
+			// On some Android TV devices, DualSense touchpad press is exposed as SELECT
+			// instead of BUTTON_1. Prefer touchpad over Share/Create for Remote Play.
+			KeyEvent.KEYCODE_BUTTON_SELECT -> ControllerState.BUTTON_TOUCHPAD
+			KeyEvent.KEYCODE_BUTTON_1 -> ControllerState.BUTTON_TOUCHPAD
 			KeyEvent.KEYCODE_BUTTON_START -> ControllerState.BUTTON_OPTIONS
 			KeyEvent.KEYCODE_BUTTON_C -> ControllerState.BUTTON_PS
 			KeyEvent.KEYCODE_BUTTON_MODE -> ControllerState.BUTTON_PS
 			else -> return false
 		}
 
+		updateKeyButtonState(event, buttonMask)
+		return true
+	}
+
+	private fun KeyEvent.isGamepadEvent(): Boolean
+	{
+		val deviceSources = device?.sources ?: 0
+		return source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
+				source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK ||
+				deviceSources and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
+				deviceSources and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
+	}
+
+	private fun updateKeyButtonState(event: KeyEvent, buttonMask: UInt)
+	{
 		keyControllerState.buttons = keyControllerState.buttons.run {
 			when(event.action)
 			{
@@ -171,7 +198,6 @@ class StreamInput(val context: Context, val preferences: Preferences)
 		}
 
 		controllerStateUpdated()
-		return true
 	}
 
 	fun onGenericMotionEvent(event: MotionEvent): Boolean

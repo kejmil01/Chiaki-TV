@@ -43,6 +43,12 @@
             app:icon="@drawable/ic_button_haptic" />
 
         <SwitchPreference
+            app:key="@string/preferences_gamepad_back_button_disconnect_enabled_key"
+            app:title="@string/preferences_gamepad_back_button_disconnect_enabled_title"
+            app:summary="@string/preferences_gamepad_back_button_disconnect_enabled_summary"
+            app:icon="@drawable/ic_gamepad" />
+
+        <SwitchPreference
             app:key="@string/preferences_log_verbose_key"
             app:title="@string/preferences_log_verbose_title"
             app:summary="@string/preferences_log_verbose_summary"

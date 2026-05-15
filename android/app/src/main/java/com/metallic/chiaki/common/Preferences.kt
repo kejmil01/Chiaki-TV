@@ -103,6 +103,11 @@ class Preferences(context: Context)
 		get() = sharedPreferences.getBoolean(tvModeEnabledKey, false)
 		set(value) { sharedPreferences.edit().putBoolean(tvModeEnabledKey, value).apply() }
 
+	val gamepadBackButtonDisconnectEnabledKey get() = resources.getString(R.string.preferences_gamepad_back_button_disconnect_enabled_key)
+	var gamepadBackButtonDisconnectEnabled
+		get() = sharedPreferences.getBoolean(gamepadBackButtonDisconnectEnabledKey, false)
+		set(value) { sharedPreferences.edit().putBoolean(gamepadBackButtonDisconnectEnabledKey, value).apply() }
+
 	val resolutionKey get() = resources.getString(R.string.preferences_resolution_key)
 	var resolution
 		get() = sharedPreferences.getString(resolutionKey, resolutionDefault.value)?.let { value ->

@@ -29,6 +29,7 @@ class DataStore(val preferences: Preferences): PreferenceDataStore()
 		preferences.rumbleEnabledKey -> preferences.rumbleEnabled
 		preferences.motionEnabledKey -> preferences.motionEnabled
 		preferences.buttonHapticEnabledKey -> preferences.buttonHapticEnabled
+		preferences.gamepadBackButtonDisconnectEnabledKey -> preferences.gamepadBackButtonDisconnectEnabled
 		else -> defValue
 	}
 
@@ -42,6 +43,7 @@ class DataStore(val preferences: Preferences): PreferenceDataStore()
 			preferences.rumbleEnabledKey -> preferences.rumbleEnabled = value
 			preferences.motionEnabledKey -> preferences.motionEnabled = value
 			preferences.buttonHapticEnabledKey -> preferences.buttonHapticEnabled = value
+			preferences.gamepadBackButtonDisconnectEnabledKey -> preferences.gamepadBackButtonDisconnectEnabled = value
 		}
 	}
 
